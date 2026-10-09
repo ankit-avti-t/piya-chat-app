@@ -689,13 +689,6 @@ function attachEvents() {
   document.querySelector("[data-delete-conversation]")?.addEventListener("click", async () => {
     if (!state.active) return;
     if (!confirm("Delete this entire conversation for both people?")) return;
-    if (state.active.group) {
-      await request("/group-messages", { method: "POST", body: JSON.stringify({ groupId: state.active.id, text, attachment: state.pendingAttachment }) });
-      state.pendingAttachment = null;
-      state.messages = (await request(`/groups/${state.active.id}/messages`)).messages;
-      render();
-      return;
-    }
     if (state.active.bot) {
       delete botMessages[state.active.id];
       localStorage.setItem("orbit-bot-messages", JSON.stringify(botMessages));
@@ -800,6 +793,13 @@ function attachEvents() {
   });
   document.querySelector("#composer")?.addEventListener("submit", async event => {
     event.preventDefault(); const input = document.getElementById("message-input"); const text = input.value.trim(); if (!text && !state.pendingAttachment) return;
+    if (state.active.group) {
+      await request("/group-messages", { method: "POST", body: JSON.stringify({ groupId: state.active.id, text, attachment: state.pendingAttachment }) });
+      state.pendingAttachment = null;
+      state.messages = (await request(`/groups/${state.active.id}/messages`)).messages;
+      render();
+      return;
+    }
     if (state.active.bot) {
       const list = botMessages[state.active.id] || [];
       list.push({ id: `local-${crypto.randomUUID()}`, senderId: "me", receiverId: state.active.id, text, attachment: state.pendingAttachment, createdAt: new Date().toISOString() });
